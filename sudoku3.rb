@@ -13,7 +13,6 @@ class SudokuGame
         result = []
         @@MASK.each_with_index { |x,i| result << i if (mask & x) > 0 }
         @@MEMOIZE[512+mask] = result;
-        puts result.to_s
         result
       else 
         []
@@ -35,18 +34,8 @@ class SudokuGame
     @open.empty?
   end
   
-  def next() 
-    @open.pop
-  end
-  
-  def clone()
-    return SudokuGame.new(
-         :vertical => @vertical.clone,
-         :horizontal => @horizontal.clone,
-         :subgrid => @subgrid.clone,
-         :board => @board.collect{|a| a.clone},
-         :open => @open.clone
-    )
+  def open_squares() 
+    @open.clone # leaves current game in inconsistent state, but much faster
   end
   
   def to_s() 
@@ -59,9 +48,14 @@ class SudokuGame
     end
     return result
   end
+
+  def successors()
+    square = @open[-1]
+    remaining = @open[0..-2]
+    return possible_values(square).collect {|value| clone(remaining).fillin(square, value)}
+  end
   
   def self.parse_board(string)
-    puts string
     input = string.gsub(/[^1-9\.]/,"").split("")
     filled = []
     input.each_with_index do |p,i|
@@ -69,8 +63,17 @@ class SudokuGame
     end
     return new(:starting_board => filled)
   end
-  
+
   private
+
+  def clone(open)
+    return SudokuGame.new(
+         :vertical => @vertical.clone,
+         :horizontal => @horizontal.clone,
+         :subgrid => @subgrid.clone,
+         :board => @board.collect{|a| a.clone},
+         :open => open    )
+  end
 
   def mark_used (vector,val)
     mask = @@MASK[val]
@@ -98,7 +101,6 @@ class SudokuGame
         @open.delete_if{|sq| coords[0]==sq[0] && coords[1]==sq[1]}
         fillin(coords, square[1])
       end
-      @open.sort!{|x, y| subgrid(x[0],x[1]) <=> subgrid(y[0],y[1])}
     end
   end
 
@@ -108,12 +110,12 @@ class SudokuGame
   
 end
 
-def search(game, expand_fn, merge_fn=lambda{|old, fresh| old + fresh}) # depth first
+def search(game, merge_fn=lambda{|old, fresh| old + fresh}) # depth first
   queue=[game]
   while !queue.empty? 
     g=queue.pop
     return g if g.complete?
-    queue = merge_fn.call(queue, expand_fn.call(g))
+    queue = merge_fn.call(queue, g.successors())
   end    
   g.complete? ? g : nil
 end
@@ -129,7 +131,7 @@ file.each_line do |line|
   game=SudokuGame.parse_board(line)
   puts "Trying to solve:"
   puts game
-  result = search(game, lambda{|g| s=g.next(); g.possible_values(s).collect{|v| g.clone.fillin(s,v)}})
+  result = search(game)
   if (result)
     puts "\nFound Solution:"
     puts result
