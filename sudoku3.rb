@@ -33,11 +33,7 @@ class SudokuGame
   def complete? () 
     @open.empty?
   end
-  
-  def open_squares() 
-    @open.clone # leaves current game in inconsistent state, but much faster
-  end
-  
+   
   def to_s() 
     result = "<board #"+@boardid.to_s + ">\n"
     (0..8).each do |x|
