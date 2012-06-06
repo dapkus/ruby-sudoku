@@ -12,7 +12,7 @@ class SudokuGame
       if (mask != 0)
         result = []
         @@MASK.each_with_index { |x,i| result << i if (mask & x) > 0 }
-        @@MEMOIZE[512+mask] = result;
+        @@MEMOIZE[512+mask] = result.freeze
         result
       else 
         []
