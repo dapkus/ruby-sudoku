@@ -26,7 +26,7 @@ class SudokuGame
     @horizontal[x]=mark_used(@horizontal[x],value) 
     @vertical[y]=mark_used(@vertical[y],value) 
     @subgrid[subgrid(x,y)]=mark_used(@subgrid[subgrid(x,y)],value)
-    @board[x][y]=value     
+    @board[bindex(x,y)]=value     
     return self     
   end
   
@@ -38,7 +38,7 @@ class SudokuGame
     result = "<board #"+@boardid.to_s + ">\n"
     (0..8).each do |x|
       (0..8).each do |y|
-        result = "#{result}#{@board[x][y] ? @board[x][y] : "."}"
+        result = "#{result}#{@board[bindex(x,y)]}"
       end
       result = "#{result}\n"
     end
@@ -67,7 +67,7 @@ class SudokuGame
          :vertical => @vertical.clone,
          :horizontal => @horizontal.clone,
          :subgrid => @subgrid.clone,
-         :board => @board.collect{|a| a.clone},
+         :board => @board.clone,
          :open => open    )
   end
 
@@ -83,7 +83,7 @@ class SudokuGame
     @vertical = params[:vertical] || Array.new(9){0x000}
     @horizontal = params[:horizontal] || Array.new(9){0x000}    
     @subgrid = params[:subgrid] || Array.new(9){0x000}    
-    @board = params[:board] || Array.new(9){Array.new(9)}
+    @board = params[:board] || Array.new(81){"."}
     @open = params[:open] 
     if @open.nil?
       @open = []
@@ -98,6 +98,10 @@ class SudokuGame
         fillin(coords, square[1])
       end
     end
+  end
+  
+  def bindex(x,y)
+    return x*9 + y
   end
 
   def subgrid(x,y)
